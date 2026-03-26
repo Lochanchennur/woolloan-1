@@ -58,7 +58,7 @@ const analyseTransactions = async (rows, manualData) => {
   let reasons = [];
   
   try {
-     const res = await fetch('http://localhost:5001/api/score/individual', {
+     const res = await fetch('https://woolloan-1.onrender.com/api/score/individual', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({
