@@ -1,35 +1,26 @@
 import React, { useState } from 'react';
 import Papa from 'papaparse';
-import { UploadCloud, FileText, AlertCircle, ArrowLeft, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { RadialBarChart, RadialBar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { UploadCloud, FileText, AlertCircle, ArrowLeft, TrendingUp, TrendingDown, Download, CheckCircle, Wallet, User, Briefcase, Info } from 'lucide-react';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 
-// ── Analyse a single person's bank transactions ──
-const analyseTransactions = (rows) => {
+// ── Enhanced analysis including manual context ──
+const analyseTransactions = (rows, manualData) => {
   let totalCredit = 0, totalDebit = 0;
   const categories = {};
   const monthly = {};
   const transactions = [];
 
+  // Parse transactions
   rows.forEach(row => {
-    // Try multiple common column name patterns
-    const rawAmount =
-      parseFloat(row['Amount'] || row['amount'] || row['AMOUNT'] ||
-        row['Credit'] || row['credit'] || row['Debit'] || row['debit'] || 0);
-
-    const typeRaw = (row['Type'] || row['type'] || row['Transaction Type'] ||
-      row['transaction_type'] || row['DR/CR'] || '').toString().toLowerCase();
-
-    const description = row['Description'] || row['description'] ||
-      row['Narration'] || row['narration'] || row['Details'] || row['Particulars'] || 'Misc';
-
+    const rawAmount = parseFloat(row['Amount'] || row['amount'] || row['AMOUNT'] || row['Credit'] || row['credit'] || row['Debit'] || row['debit'] || 0);
+    const typeRaw = (row['Type'] || row['type'] || row['Transaction Type'] || row['transaction_type'] || row['DR/CR'] || '').toString().toLowerCase();
+    const description = row['Description'] || row['description'] || row['Narration'] || row['narration'] || row['Details'] || row['Particulars'] || 'Misc';
     const dateRaw = row['Date'] || row['date'] || row['VALUE DATE'] || row['Transaction Date'] || '';
-
     const creditAmt = parseFloat(row['Credit'] || row['credit'] || row['Credit Amount'] || row['Deposit'] || 0);
     const debitAmt  = parseFloat(row['Debit']  || row['debit']  || row['Debit Amount']  || row['Withdrawal'] || 0);
 
     let amount, isCredit;
     if (creditAmt > 0 || debitAmt > 0) {
-      // Has separate credit/debit columns
       isCredit = creditAmt > 0;
       amount = isCredit ? creditAmt : debitAmt;
     } else {
@@ -38,11 +29,8 @@ const analyseTransactions = (rows) => {
     }
 
     if (!amount || isNaN(amount)) return;
+    if (isCredit) totalCredit += amount; else totalDebit += amount;
 
-    if (isCredit) totalCredit += amount;
-    else totalDebit += amount;
-
-    // Categorise by description keywords
     const desc = description.toLowerCase();
     let cat = 'Other';
     if (/salary|income|credited/i.test(desc)) cat = 'Income';
@@ -51,106 +39,146 @@ const analyseTransactions = (rows) => {
     else if (/uber|ola|petrol|fuel|transport|metro|bus/i.test(desc)) cat = 'Transport';
     else if (/amazon|flipkart|shop|mart|store|purchase/i.test(desc)) cat = 'Shopping';
     else if (/emi|loan|credit card|repay/i.test(desc)) cat = 'EMI/Loan';
-    else if (/insurance|lic|policy/i.test(desc)) cat = 'Insurance';
-    else if (/utility|electricity|bill|postpaid|broadband|gas/i.test(desc)) cat = 'Utilities';
-    else if (/upi|transfer|neft|imps|rtgs/i.test(desc)) cat = 'Transfers';
-
     if (!categories[cat]) categories[cat] = 0;
     categories[cat] += amount;
 
-    // Monthly grouping
     const mo = dateRaw ? dateRaw.substring(0, 7) : 'Unknown';
     if (!monthly[mo]) monthly[mo] = { credit: 0, debit: 0 };
-    if (isCredit) monthly[mo].credit += amount;
-    else monthly[mo].debit += amount;
-
+    if (isCredit) monthly[mo].credit += amount; else monthly[mo].debit += amount;
     transactions.push({ date: dateRaw, description, amount, isCredit, category: cat });
   });
 
-  const savings = totalCredit - totalDebit;
-  const savingsRate = totalCredit > 0 ? (savings / totalCredit) * 100 : 0;
-  const dti = totalCredit > 0 ? ((categories['EMI/Loan'] || 0) / totalCredit) * 100 : 0;
+  const savingsFlow = totalCredit - totalDebit;
+  const flowRate = totalCredit > 0 ? (savingsFlow / totalCredit) * 100 : 0;
+  
+  // ── INTEGRATED SCORING ──
+  // Base score: 600
+  let score = 600;
 
-  // Credit score heuristic (300-850)
-  let score = 650;
-  if (savingsRate > 30) score += 60;
-  else if (savingsRate > 15) score += 30;
-  else if (savingsRate < 0) score -= 80;
+  // 1. Transaction-based flow factors (+/- 100)
+  if (flowRate > 25) score += 50; else if (flowRate < 0) score -= 50;
+  if (totalCredit > 50000) score += 30;
 
-  if (dti > 40) score -= 60;
-  else if (dti > 20) score -= 20;
-  else if (dti < 10) score += 30;
+  // 2. Manual Context Factors (+/- 150)
+  const income = parseFloat(manualData.monthlyIncome || 0);
+  const savings = parseFloat(manualData.currentSavings || 0);
+  const assets = parseFloat(manualData.assets || 0);
+  const history = manualData.loanHistory;
 
-  if (totalCredit > 50000) score += 20;
-  score = Math.max(300, Math.min(850, score));
+  if (income > 80000) score += 40;
+  if (savings > (income * 3)) score += 50;
+  if (assets > 500000) score += 40;
+  
+  if (history === 'None') score += 10; // Neutral/Safe
+  else if (history === 'Repaid') score += 60; // Proven
+  else if (history === 'Ongoing') score += 20; // Active
+  else if (history === 'Overdue') score -= 90; // High risk
 
-  const monthlyArr = Object.entries(monthly)
-    .sort(([a], [b]) => a < b ? -1 : 1)
-    .slice(-6)
-    .map(([month, values]) => ({ month: month.replace(/^\d{4}-/, ''), ...values }));
+  score = Math.max(300, Math.min(850, Math.round(score)));
+  const riskLevel = score >= 720 ? 'Low' : score >= 620 ? 'Medium' : 'High';
 
-  const catArr = Object.entries(categories)
-    .filter(([, v]) => v > 0)
-    .sort(([, a], [, b]) => b - a)
-    .map(([name, value]) => ({ name, value: Math.round(value) }));
+  const monthlyArr = Object.entries(monthly).sort(([a], [b]) => a < b ? -1 : 1).slice(-6).map(([month, v]) => ({ month: month.replace(/^\d{4}-/, ''), ...v }));
+  const catArr = Object.entries(categories).filter(([, v]) => v > 0).sort(([, a], [, b]) => b - a).map(([name, value]) => ({ name, value: Math.round(value) }));
 
-  const riskLevel = score >= 700 ? 'Low' : score >= 580 ? 'Medium' : 'High';
+  // ── LENDING CALCULATION ──
+  const suggestedLimit = Math.round((income * 3) * (score / 600) + (assets * 0.05));
+  const minDuration = score >= 720 ? '24 - 36 months' : score >= 620 ? '12 - 24 months' : '6 - 12 months';
 
-  return { totalCredit, totalDebit, savings, savingsRate, dti, score, riskLevel, monthlyArr, catArr, transactions: transactions.slice(0, 50) };
+  return { 
+    totalCredit, totalDebit, savingsFlow, flowRate, 
+    manualData, score, riskLevel, monthlyArr, catArr, 
+    suggestedLimit, minDuration,
+    transactions: transactions.slice(0, 50) 
+  };
 };
 
 const fmt = (n) => '₹' + Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
-const COLORS = ['#111111', '#555555', '#888888', '#BBBBBB', '#333333', '#777777', '#AAAAAA'];
-
-const IndividualMode = ({ onBack, user, onSaveAnalysis }) => {
-  const [step, setStep] = useState('upload'); // upload | result
+const IndividualMode = ({ onBack, onSaveAnalysis }) => {
+  const [step, setStep] = useState('form'); // form | upload | result
+  const [manualData, setManualData] = useState({ monthlyIncome: '', currentSavings: '', assets: '', loanHistory: 'None' });
   const [result, setResult] = useState(null);
   const [filename, setFilename] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    setStep('upload');
+  };
+
   const handleFile = (file) => {
-    if (!file) return;
-    if (!file.name.endsWith('.csv')) { setError('Please upload a CSV file.'); return; }
-    setError('');
-    setLoading(true);
-    setFilename(file.name);
+    if (!file || !file.name.endsWith('.csv')) { setError('Please upload a CSV file.'); return; }
+    setError(''); setLoading(true); setFilename(file.name);
     Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
+      header: true, skipEmptyLines: true,
       complete: (results) => {
         setLoading(false);
-        if (!results.data || results.data.length === 0) {
-          setError('CSV appears empty or unreadable.'); return;
-        }
-        const analysis = analyseTransactions(results.data);
+        if (!results.data || results.data.length === 0) { setError('CSV is empty.'); return; }
+        const analysis = analyseTransactions(results.data, manualData);
         setResult(analysis);
         setStep('result');
-        onSaveAnalysis({
-          type: 'individual',
-          label: file.name,
-          date: new Date().toISOString(),
-          summary: `Score ${analysis.score} · ${analysis.riskLevel} Risk`
-        });
+        onSaveAnalysis({ type: 'individual', label: file.name, date: new Date().toISOString(), summary: `Score ${analysis.score} · ${analysis.riskLevel} Risk` });
       },
-      error: () => { setLoading(false); setError('Error reading the file.'); }
+      error: () => { setLoading(false); setError('Error reading file.'); }
     });
   };
 
   return (
     <div className="page-enter">
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
-        <button className="btn btn-outline" onClick={onBack}><ArrowLeft size={16} /> Back</button>
-        <div>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Individual Bank Statement Analysis</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Upload a personal transaction CSV to get a credit analysis</p>
+      {/* Header */}
+      <div className="dashboard-header report-actions">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button className="btn btn-outline" onClick={onBack}><ArrowLeft size={16} /> Back</button>
+          <div>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Individual Credit Assessment</h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Comprehensive personal risk modelling</p>
+          </div>
         </div>
       </div>
 
+      {/* STEP 1: CONTEXT FORM */}
+      {step === 'form' && (
+        <div className="panel" style={{ maxWidth: 600, margin: '0 auto' }}>
+          <div style={{ marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><User size={20} /> Step 1: Tell us about your finances</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.4rem' }}>Provide context to improve the accuracy of our baseline modelling.</p>
+          </div>
+          <form onSubmit={handleFormSubmit}>
+            <div className="field">
+              <label>Monthly Gross Income (₹)</label>
+              <input type="number" required value={manualData.monthlyIncome} onChange={e => setManualData({...manualData, monthlyIncome: e.target.value})} placeholder="e.g. 75000" />
+            </div>
+            <div className="field">
+              <label>Current Savings (₹)</label>
+              <input type="number" required value={manualData.currentSavings} onChange={e => setManualData({...manualData, currentSavings: e.target.value})} placeholder="e.g. 200000" />
+            </div>
+            <div className="field">
+              <label>Total Fixed Assets / Gold / Property (₹ Value)</label>
+              <input type="number" required value={manualData.assets} onChange={e => setManualData({...manualData, assets: e.target.value})} placeholder="e.g. 1500000" />
+            </div>
+            <div className="field">
+              <label>Loan Repayment History</label>
+              <select value={manualData.loanHistory} onChange={e => setManualData({...manualData, loanHistory: e.target.value})}>
+                <option value="None">No previous loans (Thin File)</option>
+                <option value="Repaid">Successfully repaid previous loans</option>
+                <option value="Ongoing">On-time ongoing repayments</option>
+                <option value="Overdue">History of delays or overdue payments</option>
+              </select>
+            </div>
+            <button type="submit" className="btn btn-black" style={{ width: '100%', marginTop: '1rem' }}>Continue to Statement Upload →</button>
+          </form>
+        </div>
+      )}
+
+      {/* STEP 2: UPLOAD */}
       {step === 'upload' && (
-        <div className="panel">
+        <div className="panel" style={{ maxWidth: 700, margin: '0 auto' }}>
+          <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><UploadCloud size={20} /> Step 2: Bank Statement (CSV)</h3>
+            <button className="btn btn-ghost" onClick={() => setStep('form')} style={{ fontSize: '0.8rem' }}>Edit Info</button>
+          </div>
           <div
             className={`upload-zone ${isDragging ? 'dragging' : ''}`}
             onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
@@ -160,139 +188,106 @@ const IndividualMode = ({ onBack, user, onSaveAnalysis }) => {
           >
             <input type="file" id="ind-csv" accept=".csv" style={{ display: 'none' }} onChange={e => { if (e.target.files[0]) handleFile(e.target.files[0]); }} />
             {loading ? (
-              <>
-                <FileText size={36} style={{ color: 'var(--text-muted)' }} />
-                <h3>Analysing transactions...</h3>
-                <span>Please wait</span>
-              </>
+              <><FileText size={36} className="file-upload-icon" /><h3>Syncing statement data...</h3></>
             ) : (
-              <>
-                <UploadCloud size={36} style={{ color: 'var(--text-muted)' }} />
-                <h3>Drag &amp; Drop your bank statement CSV</h3>
-                <span>or click to browse files &nbsp;·&nbsp; Supports most bank export formats</span>
-              </>
+              <><UploadCloud size={36} /><h3>Drop bank statement CSV here</h3><span>We'll merge this file with your financial context</span></>
             )}
           </div>
-          {error && <p style={{ color: 'var(--danger)', marginTop: '1rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}><AlertCircle size={16} />{error}</p>}
-
-          <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--bg-off)', borderRadius: 'var(--radius)', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            <strong style={{ color: 'var(--text)' }}>Supported columns (any combination):</strong>
-            <br />Date, Description / Narration, Amount, Credit, Debit, Type, Transaction Type, DR/CR
-          </div>
+          {error && <p style={{ color: 'var(--danger)', marginTop: '1rem' }}><AlertCircle size={16} /> {error}</p>}
         </div>
       )}
 
+      {/* STEP 3: RESULT REPORT */}
       {step === 'result' && result && (
-        <>
-          {/* Score + summary */}
+        <div id="printable-report">
+          {/* Summary Row */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div className="metric-box">
-              <div className="metric-box-label">Estimated Credit Score</div>
-              <div className="metric-box-value" style={{ color: result.score >= 700 ? 'var(--success)' : result.score >= 580 ? 'var(--warning)' : 'var(--danger)' }}>{result.score}</div>
-              <span className={`tag ${result.riskLevel === 'Low' ? 'tag-green' : result.riskLevel === 'Medium' ? 'tag-yellow' : 'tag-red'}`}>{result.riskLevel} Risk</span>
+            <div className="metric-box" style={{ borderTop: `4px solid ${result.riskLevel === 'Low' ? 'var(--success)' : result.riskLevel === 'Medium' ? 'var(--warning)' : 'var(--danger)'}` }}>
+              <div className="metric-box-label">Consolidated Risk Score</div>
+              <div className="metric-box-value" style={{ color: result.riskLevel === 'Low' ? 'var(--success)' : result.riskLevel === 'Medium' ? 'var(--warning)' : 'var(--danger)' }}>{result.score}</div>
+              <span className={`tag ${result.riskLevel === 'Low' ? 'tag-green' : result.riskLevel === 'Medium' ? 'tag-yellow' : 'tag-red'}`}>{result.riskLevel} Risk Profile</span>
             </div>
             <div className="metric-box">
-              <div className="metric-box-label">Total Income</div>
-              <div className="metric-box-value" style={{ fontSize: '1.5rem' }}>{fmt(result.totalCredit)}</div>
+              <div className="metric-box-label">Monthly Gross Income</div>
+              <div className="metric-box-value" style={{ fontSize: '1.4rem' }}>{fmt(result.manualData.monthlyIncome)}</div>
             </div>
             <div className="metric-box">
-              <div className="metric-box-label">Total Spending</div>
-              <div className="metric-box-value" style={{ fontSize: '1.5rem' }}>{fmt(result.totalDebit)}</div>
+              <div className="metric-box-label">Declared Total Assets</div>
+              <div className="metric-box-value" style={{ fontSize: '1.4rem' }}>{fmt(result.manualData.assets)}</div>
             </div>
             <div className="metric-box">
-              <div className="metric-box-label">Net Savings</div>
-              <div className="metric-box-value" style={{ fontSize: '1.5rem', color: result.savings >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-                {result.savings >= 0 ? <TrendingUp size={18} style={{ marginRight: 4 }} /> : <TrendingDown size={18} style={{ marginRight: 4 }} />}
-                {fmt(result.savings)}
+              <div className="metric-box-label">Statement Net Flow</div>
+              <div className="metric-box-value" style={{ fontSize: '1.4rem', color: result.savingsFlow >= 0 ? 'var(--success)' : 'var(--danger)' }}>{fmt(result.savingsFlow)}</div>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div className="metric-box" style={{ borderLeft: '4px solid var(--accent)' }}>
+              <div className="metric-box-label">Suggested Lending Limit</div>
+              <div className="metric-box-value" style={{ fontSize: '1.4rem', color: 'var(--accent)' }}>{fmt(result.suggestedLimit)}</div>
+            </div>
+            <div className="metric-box" style={{ borderLeft: '4px solid #6366f1' }}>
+              <div className="metric-box-label">Min. Repayment Duration</div>
+              <div className="metric-box-value" style={{ fontSize: '1.4rem' }}>{result.minDuration}</div>
+            </div>
+          </div>
+
+          <div className="report-grid">
+            {/* Analysis Results */}
+            <div className="panel">
+              <div className="panel-title">Statement Deep Dive</div>
+              <div style={{ height: 250 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={result.monthlyArr} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                    <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#666', fontFamily: 'Saira' }} />
+                    <YAxis tick={{ fontSize: 11, fill: '#666', fontFamily: 'Saira' }} />
+                    <Tooltip contentStyle={{ fontFamily: 'Saira', fontSize: 12, borderRadius: 8 }} />
+                    <Bar dataKey="credit" name="Cr" fill="#111111" radius={[2,2,0,0]} />
+                    <Bar dataKey="debit" name="Dr" fill="#BBBBBB" radius={[2,2,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              
+              <hr className="section-divider" />
+              
+              <div className="factors-list">
+                <div className={`factor-row ${result.manualData.loanHistory === 'Overdue' ? 'factor-negative' : 'factor-positive'}`}>
+                   <div><strong>Repayment Credibility:</strong> {result.manualData.loanHistory} history recorded.</div>
+                   <CheckCircle size={16} />
+                </div>
+                <div className={`factor-row ${result.flowRate > 0 ? 'factor-positive' : 'factor-negative'}`}>
+                   <div><strong>Cash Sustainment:</strong> {result.flowRate.toFixed(1)}% savings retention detected.</div>
+                   <Info size={16} />
+                </div>
               </div>
             </div>
-            <div className="metric-box">
-              <div className="metric-box-label">Savings Rate</div>
-              <div className="metric-box-value" style={{ fontSize: '1.5rem' }}>{result.savingsRate.toFixed(1)}%</div>
-            </div>
-            <div className="metric-box">
-              <div className="metric-box-label">Debt-to-Income</div>
-              <div className="metric-box-value" style={{ fontSize: '1.5rem', color: result.dti > 40 ? 'var(--danger)' : 'var(--text)' }}>{result.dti.toFixed(1)}%</div>
+
+            {/* Assets & Worth */}
+            <div className="panel">
+              <div className="panel-title">Worth Portfolio</div>
+              <div style={{ textAlign: 'center', padding: '1.5rem 0' }}>
+                 <Wallet size={48} style={{ color: 'var(--text-muted)' }} />
+                 <div style={{ marginTop: '1rem', fontSize: '1.4rem', fontWeight: 800 }}>{fmt(result.manualData.assets)}</div>
+                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Net Asset Benchmark</div>
+              </div>
+              <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                    <span>Declared Savings</span>
+                    <strong>{fmt(result.manualData.currentSavings)}</strong>
+                 </div>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                    <span>Income Stability</span>
+                    <strong>High</strong>
+                 </div>
+              </div>
             </div>
           </div>
 
-          {/* Charts */}
-          <div className="charts-row">
-            <div className="chart-panel">
-              <div className="chart-panel-title">Monthly Cash Flow</div>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={result.monthlyArr} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#555' }} />
-                  <YAxis tick={{ fontSize: 11, fill: '#555' }} tickFormatter={v => '₹' + (v/1000).toFixed(0) + 'k'} />
-                  <Tooltip formatter={v => fmt(v)} contentStyle={{ fontFamily: 'Saira', fontSize: 12, borderRadius: 6 }} />
-                  <Bar dataKey="credit" name="Income" fill="#111111" radius={[3,3,0,0]} />
-                  <Bar dataKey="debit"  name="Spending" fill="#BBBBBB" radius={[3,3,0,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="chart-panel">
-              <div className="chart-panel-title">Spending Categories</div>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={result.catArr.slice(0, 7)} layout="vertical" margin={{ top: 5, right: 20, left: 50, bottom: 0 }}>
-                  <XAxis type="number" tick={{ fontSize: 10, fill: '#555' }} tickFormatter={v => '₹' + (v/1000).toFixed(0) + 'k'} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#333' }} width={50} />
-                  <Tooltip formatter={v => fmt(v)} contentStyle={{ fontFamily: 'Saira', fontSize: 12, borderRadius: 6 }} />
-                  <Bar dataKey="value" fill="#111111" radius={[0,3,3,0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+          <div className="report-actions" style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
+            <button className="btn btn-black" onClick={() => window.print()}><Download size={16} /> Download Report (PDF)</button>
+            <button className="btn btn-outline" onClick={() => { setStep('form'); setResult(null); }}>Start New Analysis</button>
           </div>
-
-          {/* Key Factors */}
-          <div className="panel" style={{ marginBottom: '1.5rem' }}>
-            <div className="panel-title">Credit Risk Factors</div>
-            <div className="factors-list">
-              {[
-                { label: 'Savings Rate', value: `${result.savingsRate.toFixed(1)}%`, good: result.savingsRate >= 20, bad: result.savingsRate < 5, note: result.savingsRate >= 20 ? 'Excellent savings discipline' : result.savingsRate < 5 ? 'Very low savings — high risk indicator' : 'Moderate savings rate' },
-                { label: 'Debt-to-Income Ratio', value: `${result.dti.toFixed(1)}%`, good: result.dti <= 20, bad: result.dti > 40, note: result.dti > 40 ? 'High DTI — elevated default risk' : result.dti <= 20 ? 'Healthy debt burden' : 'Moderate obligations' },
-                { label: 'Total Income', value: fmt(result.totalCredit), good: result.totalCredit > 30000, bad: result.totalCredit < 5000, note: result.totalCredit > 30000 ? 'Strong income base' : 'Low income — limited repayment capacity' },
-                { label: 'Net Cash Flow', value: fmt(result.savings), good: result.savings > 0, bad: result.savings < 0, note: result.savings < 0 ? 'Spending exceeds income — negative cash flow' : 'Positive cash flow' },
-              ].map((f, i) => (
-                <div key={i} className={`factor-row ${f.good ? 'factor-positive' : f.bad ? 'factor-negative' : 'factor-neutral'}`}>
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{f.label}</div>
-                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 2 }}>{f.note}</div>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{f.value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Transaction Table */}
-          <div className="panel">
-            <div className="panel-title">Recent Transactions <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '0.85rem' }}>(first 50 rows)</span></div>
-            <div style={{ overflowX: 'auto' }}>
-              <table className="transaction-table">
-                <thead>
-                  <tr><th>Date</th><th>Description</th><th>Category</th><th style={{ textAlign: 'right' }}>Amount</th></tr>
-                </thead>
-                <tbody>
-                  {result.transactions.map((t, i) => (
-                    <tr key={i}>
-                      <td style={{ whiteSpace: 'nowrap', color: 'var(--text-muted)' }}>{t.date}</td>
-                      <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.description}</td>
-                      <td><span className="tag tag-gray">{t.category}</span></td>
-                      <td className={t.isCredit ? 'amount-credit' : 'amount-debit'} style={{ textAlign: 'right' }}>
-                        {t.isCredit ? '+' : '−'}{fmt(t.amount)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            <button className="btn btn-outline" onClick={() => { setStep('upload'); setResult(null); }}>Analyse Another Statement</button>
-            <button className="btn btn-black" onClick={onBack}>Back to Home</button>
-          </div>
-        </>
+        </div>
       )}
     </div>
   );
