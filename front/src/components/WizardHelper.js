@@ -89,12 +89,8 @@ const WizardHelper = ({ message, isVisible }) => {
         <div className="wizard-window">
           <div className="wizard-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-              <img 
-                src="/wizard.png" 
-                alt="Wizard" 
-                className={`wizard-image-header ${isThinking ? 'wizard-thinking' : 'wizard-happy'}`} 
-              />
-              <h4>CreditIQ Wizard</h4>
+              <Bot size={20} />
+              <h4>CreditIQ Helper</h4>
             </div>
             <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
               <X size={18} />
@@ -157,7 +153,7 @@ const WizardHelper = ({ message, isVisible }) => {
       )}
 
       {/* FAB */}
-      <button className={`wizard-fab ${isOpen ? 'open' : ''} ${hasNewContext ? 'peeking' : ''}`} onClick={toggleChat}>
+      <button className={`wizard-fab ${isOpen ? 'open' : ''}`} onClick={toggleChat}>
         {isOpen ? <X size={28} /> : <MessageSquare size={28} />}
       </button>
     </div>
