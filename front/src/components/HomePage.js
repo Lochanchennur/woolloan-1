@@ -1,7 +1,7 @@
 import React from 'react';
 import { BarChart2, User, FileText, TrendingUp, Clock } from 'lucide-react';
 
-const HomePage = ({ user, onSelectMode }) => {
+const HomePage = ({ user, onSelectMode, onViewHistory }) => {
   const analyses = user.analyses || [];
   const bulkCount = analyses.filter(a => a.type === 'bulk').length;
   const indivCount = analyses.filter(a => a.type === 'individual').length;

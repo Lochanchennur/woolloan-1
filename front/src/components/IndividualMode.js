@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Papa from 'papaparse';
+import { parsePdfBankStatement } from '../utils/pdfParser';
 import { UploadCloud, FileText, AlertCircle, ArrowLeft, TrendingUp, TrendingDown, Download, CheckCircle, Wallet, User, Briefcase, Info } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 
@@ -54,10 +55,14 @@ const analyseTransactions = (rows, manualData) => {
   // ── INTEGRATED SCORING ──
   // Base score: 600
   let score = 600;
+  const reasons = [];
 
   // 1. Transaction-based flow factors (+/- 100)
-  if (flowRate > 25) score += 50; else if (flowRate < 0) score -= 50;
-  if (totalCredit > 50000) score += 30;
+  if (flowRate > 25) { score += 50; reasons.push({ type: 'success', text: `Strong savings retention (${flowRate.toFixed(1)}%) (+50)` }); }
+  else if (flowRate > 0) { score += 10; reasons.push({ type: 'success', text: 'Positive cash sustainment (+10)' }); }
+  else { score -= 50; reasons.push({ type: 'danger', text: 'Negative cash flow detected (-50)' }); }
+  
+  if (totalCredit > 50000) { score += 30; reasons.push({ type: 'success', text: 'High regular inflows (+30)' }); }
 
   // 2. Manual Context Factors (+/- 150)
   const income = parseFloat(manualData.monthlyIncome || 0);
@@ -65,14 +70,14 @@ const analyseTransactions = (rows, manualData) => {
   const assets = parseFloat(manualData.assets || 0);
   const history = manualData.loanHistory;
 
-  if (income > 80000) score += 40;
-  if (savings > (income * 3)) score += 50;
-  if (assets > 500000) score += 40;
+  if (income > 80000) { score += 40; reasons.push({ type: 'success', text: 'High reported monthly income (+40)' }); }
+  if (savings > (income * 3)) { score += 50; reasons.push({ type: 'success', text: 'Healthy liquid savings buffer (+50)' }); }
+  if (assets > 500000) { score += 40; reasons.push({ type: 'success', text: 'Significant fixed asset worth (+40)' }); }
   
-  if (history === 'None') score += 10; // Neutral/Safe
-  else if (history === 'Repaid') score += 60; // Proven
-  else if (history === 'Ongoing') score += 20; // Active
-  else if (history === 'Overdue') score -= 90; // High risk
+  if (history === 'None') { score += 10; reasons.push({ type: 'warning', text: 'Thin-file starting baseline (+10)' }); }
+  else if (history === 'Repaid') { score += 60; reasons.push({ type: 'success', text: 'Proven repayment credibility (+60)' }); }
+  else if (history === 'Ongoing') { score += 20; reasons.push({ type: 'success', text: 'Active on-time repayments (+20)' }); }
+  else if (history === 'Overdue') { score -= 90; reasons.push({ type: 'danger', text: 'History of overdue payments (-90)' }); }
 
   score = Math.max(300, Math.min(850, Math.round(score)));
   const riskLevel = score >= 720 ? 'Low' : score >= 620 ? 'Medium' : 'High';
@@ -86,7 +91,7 @@ const analyseTransactions = (rows, manualData) => {
 
   return { 
     totalCredit, totalDebit, savingsFlow, flowRate, 
-    manualData, score, riskLevel, monthlyArr, catArr, 
+    manualData, score, riskLevel, monthlyArr, catArr, reasons, 
     suggestedLimit, minDuration,
     transactions: transactions.slice(0, 50) 
   };
@@ -94,10 +99,10 @@ const analyseTransactions = (rows, manualData) => {
 
 const fmt = (n) => '₹' + Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
-const IndividualMode = ({ onBack, onSaveAnalysis }) => {
-  const [step, setStep] = useState('form'); // form | upload | result
+const IndividualMode = ({ onBack, onSaveAnalysis, initialResult }) => {
+  const [step, setStep] = useState(initialResult ? 'result' : 'form'); // form | upload | result
   const [manualData, setManualData] = useState({ monthlyIncome: '', currentSavings: '', assets: '', loanHistory: 'None' });
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(initialResult || null);
   const [filename, setFilename] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -186,11 +191,11 @@ const IndividualMode = ({ onBack, onSaveAnalysis }) => {
             onDrop={e => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); }}
             onClick={() => document.getElementById('ind-csv').click()}
           >
-            <input type="file" id="ind-csv" accept=".csv" style={{ display: 'none' }} onChange={e => { if (e.target.files[0]) handleFile(e.target.files[0]); }} />
+            <input type="file" id="ind-csv" accept=".csv,.pdf" style={{ display: 'none' }} onChange={e => { if (e.target.files[0]) handleFile(e.target.files[0]); }} />
             {loading ? (
               <><FileText size={36} className="file-upload-icon" /><h3>Syncing statement data...</h3></>
             ) : (
-              <><UploadCloud size={36} /><h3>Drop bank statement CSV here</h3><span>We'll merge this file with your financial context</span></>
+              <><UploadCloud size={36} /><h3>Drop bank statement (CSV/PDF) here</h3><span>We'll merge this file with your financial context</span></>
             )}
           </div>
           {error && <p style={{ color: 'var(--danger)', marginTop: '1rem' }}><AlertCircle size={16} /> {error}</p>}

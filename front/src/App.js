@@ -9,7 +9,8 @@ const AUTH_KEY = 'credit_users';
 
 function App() {
   const [user, setUser] = useState(null);
-  const [view, setView] = useState('home'); // home | individual | bulk
+  const [view, setView] = useState('home');
+  const [historyData, setHistoryData] = useState(null);
   const [toast, setToast] = useState(null);
 
   // Restore session on load

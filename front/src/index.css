@@ -616,7 +616,7 @@ body {
   right: -12px;
   width: 44px;
   height: 44px;
-  background: url('/wizard.png') no-repeat center;
+  background: url('./wizard.png') no-repeat center;
   background-size: contain;
   animation: wizardPeek 3s ease-in-out infinite;
   pointer-events: none;

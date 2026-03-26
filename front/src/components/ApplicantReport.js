@@ -14,9 +14,12 @@ const ApplicantReport = ({ applicant, result, onReset, onBack }) => {
           <h2 style={{ fontSize: '1.3rem', fontWeight: 800, letterSpacing: '-0.02em' }}>Applicant Risk Report</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem' }}>Comparison against loaded population baseline</p>
         </div>
-        <button className="btn btn-outline" style={{ marginLeft: 'auto' }} onClick={onReset}>
-          <RefreshCw size={15} /> New Applicant
-        </button>
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.75rem' }} className="report-actions">
+           <button className="btn btn-black" onClick={() => window.print()}>Download PDF</button>
+           <button className="btn btn-outline" onClick={onReset}>
+             <RefreshCw size={15} /> New Applicant
+           </button>
+        </div>
       </div>
 
       {/* Decision Banner */}
