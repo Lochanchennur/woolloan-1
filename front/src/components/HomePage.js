@@ -77,16 +77,18 @@ const HomePage = ({ user, onSelectMode, onViewHistory }) => {
                 <th>Date</th>
                 <th>Mode</th>
                 <th>Label</th>
-                <th>Result</th>
+                <th style={{ width: '40%' }}>Result</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {[...analyses].reverse().slice(0, 5).map((a, i) => (
-                <tr key={i}>
+                <tr key={i} style={{ cursor: 'pointer' }} onClick={() => onViewHistory(a)} title="Click to view full saved report">
                   <td>{new Date(a.date).toLocaleDateString()}</td>
                   <td><span className={`tag ${a.type === 'individual' ? 'tag-gray' : 'tag-gray'}`}>{a.type === 'individual' ? 'Individual' : 'Bulk'}</span></td>
                   <td>{a.label}</td>
                   <td>{a.summary}</td>
+                  <td style={{ textAlign: 'right', color: 'var(--accent)', fontWeight: 600 }}>View &rarr;</td>
                 </tr>
               ))}
             </tbody>
