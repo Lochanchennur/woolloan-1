@@ -35,23 +35,23 @@ const Hero = ({ onDataLoaded }) => {
     });
   };
 
-  const onDragOver = useCallback((e) => {
+  const onDragOver = (e) => {
     e.preventDefault();
     setIsDragging(true);
-  }, []);
+  };
 
-  const onDragLeave = useCallback((e) => {
+  const onDragLeave = (e) => {
     e.preventDefault();
     setIsDragging(false);
-  }, []);
+  };
 
-  const onDrop = useCallback((e) => {
+  const onDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       handleFile(e.dataTransfer.files[0]);
     }
-  }, []); // eslint-disable-next-line react-hooks/exhaustive-deps
+  };
 
   const onFileInputChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
