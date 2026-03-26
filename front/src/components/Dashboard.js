@@ -20,7 +20,7 @@ const Dashboard = ({ metrics, onReset, filename, onEvaluateSingle }) => {
           <p style={{ color: 'var(--text-muted)' }}>Dataset: {filename} • Analyzed {totalUsers.toLocaleString()} profiles</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn btn-primary" onClick={onEvaluateSingle}>
+          <button id="tour-assess-btn" className="btn btn-primary" onClick={onEvaluateSingle}>
             <UserPlus size={18} /> Assess Applicant
           </button>
           <button className="btn btn-outline" onClick={onReset}>

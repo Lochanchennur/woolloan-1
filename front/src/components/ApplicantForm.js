@@ -124,7 +124,7 @@ const ApplicantForm = ({ onEvaluate, onBack }) => {
 
         </div>
 
-        <button type="submit" className="btn btn-primary" style={{ marginTop: '1rem', width: '100%' }}>
+        <button id="tour-submit-btn" type="submit" className="btn btn-primary" style={{ marginTop: '1rem', width: '100%' }}>
           Run Model Assessment
         </button>
       </form>

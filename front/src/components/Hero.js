@@ -68,6 +68,7 @@ const Hero = ({ onDataLoaded }) => {
       </p>
 
       <div 
+        id="tour-upload"
         className={`glass-card file-upload-area ${isDragging ? 'active' : ''}`}
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
