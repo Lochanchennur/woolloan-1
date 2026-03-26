@@ -1,15 +1,15 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --bg-color: #0a0a0f;
-  --bg-gradient: linear-gradient(145deg, #0a0a0f 0%, #14151f 100%);
-  --card-bg: rgba(20, 21, 31, 0.7);
-  --card-border: rgba(212, 175, 55, 0.2);
-  --text-main: #fcfcfc;
-  --text-muted: #a3a6b8;
-  --primary: #d4af37; /* Elegant Gold */
-  --primary-hover: #b49129;
-  --secondary: #8b5cf6; /* Deep Purple */
+  --bg-color: #f8fafc;
+  --bg-gradient: linear-gradient(145deg, #f8fafc 0%, #ffffff 100%);
+  --card-bg: rgba(255, 255, 255, 0.85);
+  --card-border: rgba(148, 163, 184, 0.3);
+  --text-main: #0f172a; /* Slate 900 */
+  --text-muted: #64748b; /* Slate 500 */
+  --primary: #2563eb; /* Blue 600 */
+  --primary-hover: #1d4ed8;
+  --secondary: #8b5cf6;
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
@@ -32,16 +32,15 @@ body {
   overflow-x: hidden;
 }
 
-/* Elegant Typography */
-h1, h2, h3, h4, .serif {
-  font-family: 'Playfair Display', serif;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+/* Minimal Typography */
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
   margin-bottom: 1rem;
 }
 
 .text-gradient {
-  background: linear-gradient(to right, var(--primary), #ffe58f);
+  background: linear-gradient(to right, var(--primary), var(--secondary));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -69,22 +68,22 @@ h1, h2, h3, h4, .serif {
   position: relative;
 }
 
-/* Glassmorphism Card Elegant */
+/* Glassmorphism Card (Light Minimal) */
 .glass-card {
   background: var(--card-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--card-border);
   border-radius: 12px;
-  box-shadow: 0 10px 40px 0 rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.04); /* Light diffused shadow */
   padding: 2.5rem;
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.4s ease;
 }
 
 .glass-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 16px 50px 0 rgba(212, 175, 55, 0.05); /* Soft gold shadow on hover */
-  border-color: rgba(212, 175, 55, 0.4);
+  box-shadow: 0 12px 30px 0 rgba(37, 99, 235, 0.08); /* Blue tinted soft shadow on hover */
+  border-color: rgba(37, 99, 235, 0.3);
 }
 
 /* Buttons */
@@ -96,48 +95,51 @@ h1, h2, h3, h4, .serif {
   padding: 0.75rem 1.5rem;
   border-radius: 6px;
   font-family: 'Inter', sans-serif;
-  font-weight: 500;
-  font-size: 1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   border: none;
   outline: none;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 .btn-primary {
   background: var(--primary);
-  color: #0a0a0f; /* Dark text for contrast against gold */
-  font-weight: 600;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
 }
 
 .btn-primary:hover {
   background: var(--primary-hover);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+  box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
 }
 
 .btn-outline {
   background: transparent;
-  color: var(--primary);
-  border: 1px solid var(--primary);
+  color: var(--text-main);
+  border: 1px solid var(--card-border);
 }
 
 .btn-outline:hover {
-  background: rgba(212, 175, 55, 0.1);
+  background: rgba(15, 23, 42, 0.05);
+  border-color: var(--text-main);
   transform: translateY(-2px);
 }
 
 /* Forms and Inputs */
+input, select {
+  font-family: 'Inter', sans-serif;
+}
+
 .file-upload-area {
-  border: 2px dashed rgba(212, 175, 55, 0.3);
+  border: 2px dashed rgba(37, 99, 235, 0.3);
   border-radius: 12px;
   padding: 4rem 2rem;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: rgba(212, 175, 55, 0.02);
+  background: rgba(37, 99, 235, 0.01);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -146,7 +148,7 @@ h1, h2, h3, h4, .serif {
 
 .file-upload-area:hover, .file-upload-area.active {
   border-color: var(--primary);
-  background: rgba(212, 175, 55, 0.08);
+  background: rgba(37, 99, 235, 0.05);
 }
 
 .file-upload-icon {
@@ -197,7 +199,7 @@ h1, h2, h3, h4, .serif {
 }
 
 .metric-icon-wrapper {
-  background: rgba(212, 175, 55, 0.1);
+  background: rgba(37, 99, 235, 0.1);
   padding: 0.75rem;
   border-radius: 50%;
   color: var(--primary);
@@ -208,14 +210,16 @@ h1, h2, h3, h4, .serif {
   font-size: 2.5rem;
   font-weight: 700;
   line-height: 1.1;
-  font-family: 'Playfair Display', serif;
+  color: var(--text-main);
+  letter-spacing: -0.03em;
 }
 
 .metric-label {
   color: var(--text-muted);
   font-size: 0.85rem;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
+  font-weight: 600;
 }
 
 /* Charts */
@@ -236,9 +240,9 @@ h1, h2, h3, h4, .serif {
 }
 
 .chart-title {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   margin-bottom: 1.5rem;
-  color: var(--primary);
+  color: var(--text-main);
 }
 
 @media (min-width: 900px) {
@@ -259,18 +263,19 @@ h1, h2, h3, h4, .serif {
 }
 
 .toast {
-  background: rgba(20, 21, 31, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-left: 4px solid var(--primary);
   color: var(--text-main);
   padding: 1rem 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
   animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards, fadeOut 0.4s ease 4s forwards;
   display: flex;
   align-items: center;
   gap: 0.75rem;
   min-width: 300px;
+  font-weight: 500;
 }
 
 .toast.success { border-left-color: var(--success); }
@@ -287,7 +292,7 @@ h1, h2, h3, h4, .serif {
   100% { opacity: 0; transform: translateX(20px); pointer-events: none; }
 }
 
-/* Wizard Animations */
+/* Wizard Animations & Chat */
 .wizard-container {
   position: fixed;
   bottom: 2rem;
@@ -297,7 +302,7 @@ h1, h2, h3, h4, .serif {
   z-index: 1000;
   animation: float 4s ease-in-out infinite, wizardEntrance 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   cursor: pointer;
-  filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.1));
+  filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.15));
 }
 
 .wizard-image {
@@ -305,10 +310,7 @@ h1, h2, h3, h4, .serif {
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
-  /* Using radial gradient to smoothly mask corners of square image and blend it into #0a0a0f */
-  mask-image: radial-gradient(circle 70px at center, black 80%, transparent 100%);
-  -webkit-mask-image: radial-gradient(circle 70px at center, black 80%, transparent 100%);
-  mix-blend-mode: screen; 
+  mix-blend-mode: multiply; /* Will make the pure white background of the image disappear nicely into the light app background */
 }
 
 .wizard-bubble {
@@ -325,7 +327,7 @@ h1, h2, h3, h4, .serif {
   color: var(--text-main);
   font-size: 0.95rem;
   width: 260px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
   animation: bubblePop 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   line-height: 1.5;
 }
@@ -349,17 +351,17 @@ h1, h2, h3, h4, .serif {
 /* Guided Tour Spotlight */
 .tour-spotlight {
   position: relative;
-  z-index: 10001; /* Above standard elements */
+  z-index: 10001;
   animation: pulseGlow 1.5s infinite;
 }
 
 @keyframes pulseGlow {
-  0% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.7); }
-  70% { box-shadow: 0 0 0 15px rgba(212, 175, 55, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(212, 175, 55, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+  70% { box-shadow: 0 0 0 15px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
 }
 
-/* Chat Window */
+/* Light Chat Window */
 .chat-window {
   position: absolute;
   bottom: 155px; /* Above the wizard */
@@ -374,18 +376,17 @@ h1, h2, h3, h4, .serif {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   animation: fadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   pointer-events: auto;
   cursor: default;
 }
 
 .chat-header {
-  background: rgba(212, 175, 55, 0.1);
+  background: rgba(37, 99, 235, 0.05);
   padding: 1rem;
   border-bottom: 1px solid var(--card-border);
-  font-family: 'Playfair Display', serif;
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -409,13 +410,14 @@ h1, h2, h3, h4, .serif {
 }
 
 .chat-msg.wizard {
-  background: rgba(212, 175, 55, 0.15);
+  background: rgba(37, 99, 235, 0.1);
   align-self: flex-start;
   border-bottom-left-radius: 2px;
 }
 
 .chat-msg.user {
-  background: rgba(139, 92, 246, 0.2);
+  background: var(--text-main);
+  color: white;
   align-self: flex-end;
   border-bottom-right-radius: 2px;
 }
@@ -425,15 +427,18 @@ h1, h2, h3, h4, .serif {
   border-top: 1px solid var(--card-border);
   display: flex;
   gap: 0.5rem;
+  background: #ffffff;
 }
 
 .chat-input {
   flex: 1;
-  background: rgba(0,0,0,0.3);
+  background: rgba(15, 23, 42, 0.05);
   border: 1px solid var(--card-border);
   padding: 0.5rem;
   border-radius: 4px;
-  color: white;
+  color: var(--text-main);
   outline: none;
 }
-
+.chat-input:focus {
+  border-color: var(--primary);
+}

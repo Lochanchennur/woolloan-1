@@ -58,13 +58,13 @@ function App() {
 
   return (
     <div className="app-container">
-      
+
       {/* Global Navigation / Help Button */}
       {view !== 'help' && (
-        <button 
-           onClick={() => setView('help')}
-           style={{ position: 'absolute', top: '2rem', right: '2rem', background: 'transparent', border: 'none', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', gap: '0.5rem', alignItems: 'center', zIndex: 10 }}
-           className="btn"
+        <button
+          onClick={() => setView('help')}
+          style={{ position: 'absolute', top: '2rem', right: '2rem', background: 'transparent', border: 'none', color: 'var(--text-main)', cursor: 'pointer', display: 'flex', gap: '0.5rem', alignItems: 'center', zIndex: 10 }}
+          className="btn"
         >
           <HelpCircle size={20} /> <span style={{ fontFamily: 'Playfair Display' }}>Help & Docs</span>
         </button>
@@ -85,34 +85,34 @@ function App() {
           <Hero onDataLoaded={handleDataLoaded} />
         </div>
       )}
-      
+
       {view === "dashboard" && (
         <div className="page-enter">
-          <Dashboard 
-            metrics={metrics} 
-            onReset={handleReset} 
-            filename={datasetName} 
-            onEvaluateSingle={startApplicantEvaluation} 
+          <Dashboard
+            metrics={metrics}
+            onReset={handleReset}
+            filename={datasetName}
+            onEvaluateSingle={startApplicantEvaluation}
           />
         </div>
       )}
-      
+
       {view === "form" && (
         <div className="page-enter">
-          <ApplicantForm 
-            onEvaluate={handleApplicantEvaluate} 
-            onBack={() => setView("dashboard")} 
+          <ApplicantForm
+            onEvaluate={handleApplicantEvaluate}
+            onBack={() => setView("dashboard")}
           />
         </div>
       )}
-      
+
       {view === "report" && (
         <div className="page-enter">
-          <ApplicantReport 
-            applicant={currentApplicant} 
-            result={evaluationResult} 
-            onReset={() => setView("form")} 
-            onBack={() => setView("dashboard")} 
+          <ApplicantReport
+            applicant={currentApplicant}
+            result={evaluationResult}
+            onReset={() => setView("form")}
+            onBack={() => setView("dashboard")}
           />
         </div>
       )}
